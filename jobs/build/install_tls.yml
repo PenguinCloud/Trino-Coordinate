@@ -1,0 +1,39 @@
+---
+- name: create root TLS dir for Trino cert
+  file:
+    path: /opt/tls-trino
+    state: directory
+
+- name: create certificate TLS dir for Trino cert
+  file:
+    path: /opt/tls-trino/crt/
+    state: directory
+
+- name: create certificate the full TLS dir for Trino cert
+  file:
+    path: /opt/tls-trino/crt/full/
+    state: directory
+
+- name: create DH-Param dir for Trino cert
+  file:
+    path: /opt/tls-trino/dhparam/
+    state: directory
+
+- name: create private key TLS dir for Trino cert
+  file:
+    path: /opt/tls-trino/private/
+    state: directory
+
+- name: Recursively change ownership of trino cert directory
+  ansible.builtin.file:
+    path: /opt/tls-trino
+    state: directory
+    recurse: yes
+    owner: "{{ run.user }}"
+    group: "{{ run.user }}"
+
+
+#- name: create public key TLS dir for Trino cert
+#  file:
+#    path: /opt/tls-trino/public/
+#    state: directory

@@ -1,0 +1,12 @@
+---
+- name: Run output test to see why this isn't working
+  include_tasks:
+    file: jobs/tests/test.yml
+
+#- name: Start the Trino Service
+#  ansible.builtin.shell:
+#    cmd: /opt/trino/bin/launcher start
+
+#- name: Run Trino CLI shell
+#  shell:
+#    cmd: /opt/trino/trinocli/./trino --server http://localhost:8181/

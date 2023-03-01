@@ -1,0 +1,171 @@
+---
+#- name: Create the trino self-signed certificate for TLS
+#- block:
+- name: Create trino private key
+  community.crypto.openssl_privatekey:
+    path: "{{ trino_tls.full_path_priv }}"
+    type: RSA
+    passphrase: "{{ trino_tls.secret }}"
+    cipher: auto
+    size: 2048
+
+- name: Generate the required information about the trino private key
+  community.crypto.openssl_privatekey_info:
+    path: "{{ trino_tls.full_path_priv }}"
+    select_crypto_backend: cryptography
+    check_consistency: true
+    passphrase: "{{ trino_tls.secret }}"
+
+- name: Create trino DH-Param key
+  community.crypto.openssl_dhparam:
+    path: "{{ trino_tls.full_path_dhparam }}"
+    size: 2048
+
+# A public key is not needed in a OpenSSL cert.  It is done in the x509 cert.
+#- name: Create trino public key
+#  community.crypto.openssl_publickey:
+#    path: "{{ trino_tls.cert_path_pub }}/{{ trino_tls.pub_cert_name }}.pem"
+#    privatekey_path: "{{ trino_tls.cert_path_priv }}/{{ trino_tls.priv_cert_name }}.pem"
+#    select_crypto_backend: cryptography
+#    privatekey_passphrase: "{{ trino_tls.secret }}"
+
+- name: Create trino signing request
+  community.crypto.openssl_csr:
+    path: "{{ trino_tls.full_path_csr }}"
+    privatekey_path: "{{ trino_tls.full_path_priv }}"
+    privatekey_passphrase: "{{ trino_tls.secret }}"
+    common_name: "{{ trino_tls.cert_name }}"
+    country_name: "{{ trino_tls.country }}"
+    state_or_province_name: "{{ trino_tls.state }}"
+    locality_name: "{{ trino_tls.city }}"
+    organization_name: "{{ trino_tls.organization }}"
+    organizational_unit_name: "{{ trino_tls.department }}"
+    email_address: "{{ trino_tls.email }}"
+    subject_alt_name: "{{ trino_tls.subject_alt_name }}"
+    digest: sha384
+
+- name: Create trino self signed x509 cert
+  community.crypto.x509_certificate:
+    path: "{{ trino_tls.full_path_crt }}"
+    privatekey_path: "{{ trino_tls.full_path_priv }}"
+    csr_path: "{{ trino_tls.full_path_csr }}"
+    privatekey_passphrase: "{{ trino_tls.secret }}"
+    selfsigned_digest: sha384
+    provider: selfsigned # acme
+
+    # acme_accountkey_path: "{{ trino_tls.cert_path_priv }}/{{ trino_tls.priv_cert_name }}.pem"
+    # acme_challenge_path:
+
+- name: Create the "fullchain.pem" file to a fully valid TLS cert.
+  ansible.builtin.file:
+    path: "{{ trino_tls.full_path_fullchain }}"
+    state: touch
+
+- name: Add the private key to the full chain file
+  ansible.builtin.shell:
+    cmd: cat "{{ trino_tls.full_path_priv }}" >> "{{ trino_tls.full_path_fullchain }}"
+
+- name: Add the x509 cert to the full chain file
+  ansible.builtin.shell:
+    cmd: cat "{{ trino_tls.full_path_crt }}" >> "{{ trino_tls.full_path_fullchain }}"
+
+- name: Add the signing request to the full chain file
+  ansible.builtin.shell:
+    cmd: cat "{{ trino_tls.full_path_csr }}" >> "{{ trino_tls.full_path_fullchain }}"
+
+- name: Add the DH-Param key to the full chain file
+  ansible.builtin.shell:
+    cmd: cat "{{ trino_tls.full_path_dhparam }}" >> "{{ trino_tls.full_path_fullchain }}"
+
+- name: Add the signing request to the full chain file
+  ansible.builtin.stat:
+    path: "{{ trino_tls.full_path_fullchain }}"
+  register: fullchain_test_stats
+
+- name: Fully validate the `fullchain.pm` key -- Private, CRT, CSR, RSA, and DH-Param keys
+  ansible.builtin.shell:
+    cmd: |
+      openssl req -text -noout -in "{{ trino_tls.full_path_fullchain }}"  -passin pass:"{{ trino_tls.secret }}" || exit 1
+      openssl x509 -text -noout -in "{{ trino_tls.full_path_fullchain }}" -passin pass:"{{ trino_tls.secret }}" || exit 2
+      openssl pkey -text -noout -in "{{ trino_tls.full_path_fullchain }}" -passin pass:"{{ trino_tls.secret }}" || exit 3
+      openssl dhparam -text -noout -in "{{ trino_tls.full_path_fullchain }}" || exit 4
+      openssl rsa -check -noout -in "{{ trino_tls.full_path_fullchain }}" -passin pass:"{{ trino_tls.secret }}" || exit 5
+  when: fullchain_test_stats.stat.exists
+  register: fullchain_inspect
+
+- name: An Error occured with the CSR cert.  Recheck.
+  ansible.builtin.fail:
+    msg: "The fullchain TLS cert does not have a valid CSR.  Please check"
+  when: fullchain_inspect.rc == 1
+
+- name: An Error occured with the x509 cert.  Recheck.
+  ansible.builtin.fail:
+    msg: "The fullchain TLS cert does not have a valid x509.  Please check"
+  when: fullchain_inspect.rc == 2
+
+- name: An Error occured with the the private key.  Recheck.
+  ansible.builtin.fail:
+    msg: "The fullchain TLS cert does not have a valid private key.  Please check"
+  when: fullchain_inspect.rc == 3
+
+- name: An Error occured with the DH-Param key.  Recheck.
+  ansible.builtin.fail:
+    msg: "The fullchain TLS cert does not have a valid DH-Param key.  Please check"
+  when: fullchain_inspect.rc == 4
+
+- name: An Error occured with the RSA key.  Recheck.
+  ansible.builtin.fail:
+    msg: "The fullchain TLS cert does not have a valid RSA key.  Please check"
+  when: fullchain_inspect.rc == 5
+
+
+
+#  Please note: The code below only works for doing ONE insertion, and you CANNOT use it for OpenSSL
+#  It just simply will not work.  Don't do it.
+#- name: Add the signing request to the full chain file
+#  ansible.builtin.blockinfile:
+#    path: "{{ trino_tls.cert_path_full }}{{ trino_tls.full_cert }}.pem"
+#    block: "{{ lookup('file', '{{ trino_tls.cert_path_crt }}{{ trino_tls.cert_name }}.csr' ) }}"
+#    insertafter: "-----END CERTIFICATE REQUEST-----"
+#    state: present
+#    validate: /bin/true %s
+
+
+#- name: Create ACME self-signed cert for Trino
+#  community.crypto.acme_certificate:
+#    path: "{{ trino_tls.cert_path_crt }}/{{ trino_tls.cert_name }}.pem"
+#    privatekey_path: "{{ trino_tls.cert_path_priv }}/{{ trino_tls.priv_cert_name }}.pem"
+#    common_name: "{{ trino_tls.cert_name }}"
+#    country_name: "{{ trino_tls.country }}"
+#    state_or_province_name: "{{ trino_tls.state }}"
+#    locality_name: "{{ trino_tls.city }}"
+#    organization_name: "{{ trino_tls.organization }}"
+#    organizational_unit_name: "{{ trino_tls.department }}"
+#    email_address: "{{ trino_tls.email }}"
+#    subject_alt_name: "{{ trino_tls.subject_alt_name }}"
+#    provider: "self-signed"
+#
+#- name: Create self-signed ACME account for Trino
+#  community.crypto.acme_account:
+#    state: present
+#    account_key_src: "{{ trino_tls.cert_path_priv }}/{{ trino_tls.priv_cert_name }}.pem"
+#    account_email: "{{ trino_tls.email }}"
+#    provider: "self-signed"
+
+
+#- name: Setup a self-signed certificate for Trino
+#  hosts: localhost
+#  connection: local
+#  gather_facts: no
+#  vars:
+#    cert_path_pub: /opt/tls-trino/public
+#    cert_path_priv: /opt/tls-trino/private
+#    cert_path_crt: /opt/tls-trino/crt
+#    cert_name: trino_self_cert
+#    country: US
+#    state: Texas
+#    city: Liberty Hill
+#    organization: Penguin Technologies Group LLC
+#    department: DSS
+#    email: justin@penguintech.io
+#    subject_alt_name: "DNS:localhost, IP:127.0.0.1"

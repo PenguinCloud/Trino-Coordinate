@@ -1,0 +1,19 @@
+---
+# This is code that is not being used, but it works.
+# I can reuse this code block for future use.
+# It's a good example on how to use loops with conditionals
+- name: Get the Trino service running
+  block:
+    - name: Start the Trino Service
+      ansible.builtin.shell:
+        cmd: /opt/trino/bin/launcher start
+      async: 15
+      poll: 5
+
+    - name: Check to see if the Trino Service is Running
+      ansible.builtin.shell:
+        cmd: /opt/trino/bin/launcher status -v
+      register: cmd_result_status
+      until: "'Running as' in cmd_result_status.stdout"
+      retries: 10
+      delay: 6

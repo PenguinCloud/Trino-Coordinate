@@ -1,0 +1,41 @@
+run:
+  user: ptg-user
+app:
+  title: "{{ lookup('ansible.builtin.env', 'APP_TILE') }}"
+
+trino:
+  link: "{{ lookup('ansible.builtin.env', 'TRINO_LINK') }}"
+  version: "{{ lookup('ansible.builtin.env', 'TRINO_VERSION') }}"
+  arc_version: "{{ lookup('ansible.builtin.env', 'TRINO_ARC_VERSION') }}"
+
+trino_tls:
+# cert_path_pub: /opt/tls-trino/public/
+#  cert_path_dhparam: /opt/tls-trino/dhparam/
+#  cert_path_priv: /opt/tls-trino/private/
+#  cert_path_crt: /opt/tls-trino/crt/
+#  cert_path_full: /opt/tls-trino/crt/full/
+#  cert_name: trino_self_cert
+#  priv_cert_name: trino_self_cert_priv
+#  full_cert: fullchain
+#  dhparam_cert_name: trino_self_cert_dhparam
+  full_path_fullchain: /opt/tls-trino/crt/full/fullchain.pem
+  full_path_priv: /opt/tls-trino/private/trino_self_cert_priv.pem
+  full_path_dhparam: /opt/tls-trino/dhparam/trino_self_cert_dhparam.pem
+  full_path_crt: /opt/tls-trino/crt/trino_self_cert.pem
+  full_path_csr: /opt/tls-trino/crt/trino_self_cert.csr
+  cert_name: ptg_trino_self_cert
+  country: US
+  state: Texas
+  city: Liberty Hill
+  organization: Penguin Technologies Group LLC
+  department: DSS
+  email: ptg-admin@penguintech.io
+  subject_alt_name: [
+    "DNS:localhost",
+    "IP:127.0.0.1"
+  ]
+  secret: ptginc
+
+trinocli:
+  link: "{{ lookup('ansible.builtin.env', 'TRINOCLI_LINK') }}"
+  jar_version: "{{ lookup('ansible.builtin.env', 'TRINOCLI_JAR_VERSION') }}"
