@@ -2,7 +2,7 @@
 version: "2.4"
 services:
   trino-cord:
-    image: penguintech/trino-cord
+    image: penguincloud/Trino-Coordinate
     build: .
     ports:
       - "8443:8443"
