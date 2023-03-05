@@ -3,9 +3,9 @@
   include_tasks:
     file: config_templates.yml
 
-- name: Configure Trino with a shared secret for the node network
-  include_tasks:
-    file: shared_trino_secret.yml
+# - name: Configure Trino with a shared secret for the node network
+#   include_tasks:
+#     file: shared_trino_secret.yml
 
 # Create a 'stat' playbook to check to see if the file exists, if it does not, then use 'when' to check to see
 # If stat found anything.
