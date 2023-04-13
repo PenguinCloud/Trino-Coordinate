@@ -1,4 +1,4 @@
-FROM ghcr.io/PenguinCloud/core:latest
+FROM ghcr.io/penguincloud/core:latest
 LABEL company="Penguin Tech Group LLC"
 LABEL org.opencontainers.image.authors="info@penguintech.group"
 LABEL license="GNU AGPL3"
