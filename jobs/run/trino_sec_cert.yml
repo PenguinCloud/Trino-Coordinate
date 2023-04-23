@@ -85,7 +85,7 @@
 - name: Fully validate the `fullchain.pm` key -- Private, CRT, CSR, RSA, and DH-Param keys
   ansible.builtin.shell:
     cmd: |
-      openssl req -text -noout -in "{{ trino_tls.full_path_fullchain }}"  -passin pass:"{{ trino_tls.secret }}" || exit 1
+      openssl req -text -noout -in "{{ trino_tls.full_path_fullchain }}"" -passin pass:"{{ trino_tls.secret }}" || exit 1
       openssl x509 -text -noout -in "{{ trino_tls.full_path_fullchain }}" -passin pass:"{{ trino_tls.secret }}" || exit 2
       openssl pkey -text -noout -in "{{ trino_tls.full_path_fullchain }}" -passin pass:"{{ trino_tls.secret }}" || exit 3
       openssl dhparam -text -noout -in "{{ trino_tls.full_path_fullchain }}" || exit 4
