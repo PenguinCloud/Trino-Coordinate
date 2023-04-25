@@ -61,9 +61,9 @@
     path: "{{ trino_tls.full_path_fullchain }}"
     state: touch
 
-- name: Add the private key to the full chain file
-  ansible.builtin.shell:
-    cmd: cat "{{ trino_tls.full_path_priv }}" >> "{{ trino_tls.full_path_fullchain }}"
+# - name: Add the private key to the full chain file
+#   ansible.builtin.shell:
+#     cmd: cat "{{ trino_tls.full_path_priv }}" >> "{{ trino_tls.full_path_fullchain }}"
 
 - name: Add the x509 cert to the full chain file
   ansible.builtin.shell:
@@ -89,24 +89,35 @@
   loop:
     - { cmd: "openssl req -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid CSR. Please check", exit_code: 1 }
     - { cmd: "openssl x509 -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid x509. Please check", exit_code: 2 }
-    - { cmd: "openssl pkey -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid private key. Please check", exit_code: 3 }
-    - { cmd: "openssl rsa -check -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid RSA key. Please check", exit_code: 4 }
+    - { cmd: "openssl rsa -check -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid RSA key. Please check", exit_code: 3 }
   register: fullchain_inspect
   failed_when: fullchain_inspect.rc != 0
 
-- name: Handle errors
+- name: Handle most errors
   ansible.builtin.fail:
     msg: "{{ item.item.error_msg }}"
   when: item.rc == item.item.exit_code
   loop: "{{ fullchain_inspect.results }}"
 
+- name: Validate the Private key
+  ansible.builtin.shell:
+    cmd: "openssl pkey -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'"
+  register: privkey_inspect
+
+- name: An Error occured with the the private key.  Recheck.
+  ansible.builtin.fail:
+     msg: "The fullchain TLS cert does not have a valid private key.  Please check"
+  when: privkey_inspect.rc != 0
+
 - name: Validate the DH-Param key
-  ansible.builtin.command:
+  ansible.builtin.shell:
     cmd: "openssl dhparam -text -noout -in '{{ trino_tls.full_path_dhparam }}'"
   register: dhparam_inspect
-  failed_when: dhparam_inspect.rc != 0
 
-
+- name: An Error occured with the DH-Param key.  Recheck.
+  ansible.builtin.fail:
+    msg: "The fullchain TLS cert does not have a valid DH-Param key. Please check"
+  when: dhparam_inspect.rc != 0
 
 
 #  Please note: The code below only works for doing ONE insertion, and you CANNOT use it for OpenSSL
