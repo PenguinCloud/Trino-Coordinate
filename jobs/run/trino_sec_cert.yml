@@ -61,9 +61,9 @@
     path: "{{ trino_tls.full_path_fullchain }}"
     state: touch
 
-- name: Add the private key to the full chain file
-  ansible.builtin.shell:
-    cmd: cat "{{ trino_tls.full_path_priv }}" >> "{{ trino_tls.full_path_fullchain }}"
+# - name: Add the private key to the full chain file
+#   ansible.builtin.shell:
+#     cmd: cat "{{ trino_tls.full_path_priv }}" >> "{{ trino_tls.full_path_fullchain }}"
 
 - name: Add the x509 cert to the full chain file
   ansible.builtin.shell:
@@ -89,8 +89,8 @@
   loop:
     - { cmd: "openssl req -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid CSR. Please check.", exit_code: 1 }
     - { cmd: "openssl x509 -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid x509. Please check.", exit_code: 2 }
-    - { cmd: "openssl pkey -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid private key. Please check.", exit_code: 3 }
-    - { cmd: "openssl rsa -check -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid RSA key. Please check.", exit_code: 4 }
+    - { cmd: "openssl pkey -text -noout -in '{{ trino_tls.full_path_priv }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid private key. Please check.", exit_code: 3 }
+    - { cmd: "openssl rsa -check -noout -in '{{ trino_tls.full_path_priv }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid RSA key. Please check.", exit_code: 4 }
   register: fullchain_inspect
   failed_when: fullchain_inspect.rc != 0
 
