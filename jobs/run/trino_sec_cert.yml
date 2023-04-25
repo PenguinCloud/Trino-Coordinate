@@ -82,41 +82,24 @@
     path: "{{ trino_tls.full_path_fullchain }}"
   register: fullchain_test_stats
 
-- name: Fully validate the `fullchain.pm` key -- Private, CRT, CSR, RSA, and DH-Param keys
+- name: Fully validate the `fullchain.pem` key -- Private, CRT, CSR, RSA, and DH-Param keys
   ansible.builtin.shell:
-    cmd: |
-      openssl req -text -noout -in "{{ trino_tls.full_path_fullchain }}" -passin pass:"{{ trino_tls.secret }}" || exit 1
-      openssl x509 -text -noout -in "{{ trino_tls.full_path_fullchain }}" -passin pass:"{{ trino_tls.secret }}" || exit 2
-      openssl pkey -text -noout -in "{{ trino_tls.full_path_fullchain }}" -passin pass:"{{ trino_tls.secret }}" || exit 3
-      openssl dhparam -text -noout -in "{{ trino_tls.full_path_fullchain }}" || exit 4
-      openssl rsa -check -noout -in "{{ trino_tls.full_path_fullchain }}" -passin pass:"{{ trino_tls.secret }}" || exit 5
+    cmd: "{{ item.cmd }}"
   when: fullchain_test_stats.stat.exists
+  loop:
+    - { cmd: "openssl req -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid CSR. Please check", exit_code: 1 }
+    - { cmd: "openssl x509 -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid x509. Please check", exit_code: 2 }
+    - { cmd: "openssl pkey -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid private key. Please check", exit_code: 3 }
+    - { cmd: "openssl dhparam -text -noout -in '{{ trino_tls.full_path_fullchain }}'", error_msg: "The fullchain TLS cert does not have a valid DH-Param key. Please check", exit_code: 4 }
+    - { cmd: "openssl rsa -check -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid RSA key. Please check", exit_code: 5 }
   register: fullchain_inspect
+  failed_when: fullchain_inspect.rc != 0
 
-- name: An Error occured with the CSR cert.  Recheck.
+- name: Handle errors
   ansible.builtin.fail:
-    msg: "The fullchain TLS cert does not have a valid CSR.  Please check"
-  when: fullchain_inspect.rc == 1
-
-- name: An Error occured with the x509 cert.  Recheck.
-  ansible.builtin.fail:
-    msg: "The fullchain TLS cert does not have a valid x509.  Please check"
-  when: fullchain_inspect.rc == 2
-
-- name: An Error occured with the the private key.  Recheck.
-  ansible.builtin.fail:
-    msg: "The fullchain TLS cert does not have a valid private key.  Please check"
-  when: fullchain_inspect.rc == 3
-
-- name: An Error occured with the DH-Param key.  Recheck.
-  ansible.builtin.fail:
-    msg: "The fullchain TLS cert does not have a valid DH-Param key.  Please check"
-  when: fullchain_inspect.rc == 4
-
-- name: An Error occured with the RSA key.  Recheck.
-  ansible.builtin.fail:
-    msg: "The fullchain TLS cert does not have a valid RSA key.  Please check"
-  when: fullchain_inspect.rc == 5
+    msg: "{{ item.item.error_msg }}"
+  when: item.rc == item.item.exit_code
+  loop: "{{ fullchain_inspect.results }}"
 
 
 
