@@ -8,6 +8,5 @@ http-server.https.keystore.key="{{ trino_tls.secret }}"
 http-server.https.included-cipher=TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA
 # http-server.https.excluded-cipher=
 http-server.https.keystore.path=/opt/tls-trino/crt/full/fullchain.pem
-http-server.https.key.path=/opt/tls-trino/private/trino_self_cert_priv.pem
 # jmx.rmiregistry.port=9080 - these don't need to be changed unless a different port is needed
 # jmx.rmiserver.port=9081
