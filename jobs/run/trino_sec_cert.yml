@@ -73,9 +73,9 @@
   ansible.builtin.shell:
     cmd: cat "{{ trino_tls.full_path_csr }}" >> "{{ trino_tls.full_path_fullchain }}"
 
-- name: Add the DH-Param key to the full chain file
-  ansible.builtin.shell:
-    cmd: cat "{{ trino_tls.full_path_dhparam }}" >> "{{ trino_tls.full_path_fullchain }}"
+# - name: Add the DH-Param key to the full chain file
+#   ansible.builtin.shell:
+#     cmd: cat "{{ trino_tls.full_path_dhparam }}" >> "{{ trino_tls.full_path_fullchain }}"
 
 - name: Add the signing request to the full chain file
   ansible.builtin.stat:
