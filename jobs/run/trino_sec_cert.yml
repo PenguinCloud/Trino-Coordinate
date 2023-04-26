@@ -77,7 +77,7 @@
 #   ansible.builtin.shell:
 #     cmd: cat "{{ trino_tls.full_path_dhparam }}" >> "{{ trino_tls.full_path_fullchain }}"
 
-- name: Setup the 'fullchain.pem' for testing and debugging playbooks
+- name: Setup the 'fullchain.pem' for the testing and debugging playbooks
   ansible.builtin.stat:
     path: "{{ trino_tls.full_path_fullchain }}"
   register: fullchain_test_stats
