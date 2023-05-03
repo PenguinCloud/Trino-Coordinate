@@ -34,7 +34,7 @@ trino_tls:
     "DNS:localhost",
     "IP:127.0.0.1"
   ]
-  secret: ptginc
+#  secret: ptginc
 
 trinocli:
   link: "{{ lookup('ansible.builtin.env', 'TRINOCLI_LINK') }}"

@@ -5,7 +5,7 @@
   community.crypto.openssl_privatekey:
     path: "{{ trino_tls.full_path_priv }}"
     type: RSA
-    passphrase: "{{ trino_tls.secret }}"
+#    passphrase: "{{ trino_tls.secret }}"
     cipher: auto
     size: 2048
 
@@ -14,7 +14,7 @@
     path: "{{ trino_tls.full_path_priv }}"
     select_crypto_backend: cryptography
     check_consistency: true
-    passphrase: "{{ trino_tls.secret }}"
+#    passphrase: "{{ trino_tls.secret }}"
 
 - name: Create trino DH-Param key
   community.crypto.openssl_dhparam:
@@ -33,7 +33,7 @@
   community.crypto.openssl_csr:
     path: "{{ trino_tls.full_path_csr }}"
     privatekey_path: "{{ trino_tls.full_path_priv }}"
-    privatekey_passphrase: "{{ trino_tls.secret }}"
+#    privatekey_passphrase: "{{ trino_tls.secret }}"
     common_name: "{{ trino_tls.cert_name }}"
     country_name: "{{ trino_tls.country }}"
     state_or_province_name: "{{ trino_tls.state }}"
@@ -49,7 +49,7 @@
     path: "{{ trino_tls.full_path_crt }}"
     privatekey_path: "{{ trino_tls.full_path_priv }}"
     csr_path: "{{ trino_tls.full_path_csr }}"
-    privatekey_passphrase: "{{ trino_tls.secret }}"
+#    privatekey_passphrase: "{{ trino_tls.secret }}"
     selfsigned_digest: sha384
     provider: selfsigned # acme
 
@@ -87,10 +87,10 @@
     cmd: "{{ item.cmd }}"
   when: fullchain_test_stats.stat.exists
   loop:
-    - { cmd: "openssl req -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid CSR. Please check.", exit_code: 1 }
-    - { cmd: "openssl x509 -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid x509. Please check.", exit_code: 2 }
-    - { cmd: "openssl pkey -text -noout -in '{{ trino_tls.full_path_priv }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid private key. Please check.", exit_code: 3 }
-    - { cmd: "openssl rsa -check -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid RSA key. Please check.", exit_code: 4 }
+    - { cmd: "openssl req -text -noout -in '{{ trino_tls.full_path_fullchain }}'", error_msg: "The fullchain TLS cert does not have a valid CSR. Please check.", exit_code: 1 }
+    - { cmd: "openssl x509 -text -noout -in '{{ trino_tls.full_path_fullchain }}'", error_msg: "The fullchain TLS cert does not have a valid x509. Please check.", exit_code: 2 }
+    - { cmd: "openssl pkey -text -noout -in '{{ trino_tls.full_path_priv }}'", error_msg: "The fullchain TLS cert does not have a valid private key. Please check.", exit_code: 3 }
+    - { cmd: "openssl rsa -check -noout -in '{{ trino_tls.full_path_fullchain }}'", error_msg: "The fullchain TLS cert does not have a valid RSA key. Please check.", exit_code: 4 }
   register: fullchain_inspect
   failed_when: fullchain_inspect.rc != 0
 
@@ -109,6 +109,19 @@
   ansible.builtin.fail:
     msg: "The fullchain TLS cert does not have a valid DH-Param key. Please check"
   when: dhparam_inspect.rc != 0
+
+
+# - name: Fully validate the `fullchain.pem` key -- Private, CRT, CSR, RSA, and DH-Param keys
+#   ansible.builtin.shell:
+#     cmd: "{{ item.cmd }}"
+#   when: fullchain_test_stats.stat.exists
+#   loop:
+#     - { cmd: "openssl req -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid CSR. Please check.", exit_code: 1 }
+#     - { cmd: "openssl x509 -text -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid x509. Please check.", exit_code: 2 }
+#     - { cmd: "openssl pkey -text -noout -in '{{ trino_tls.full_path_priv }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid private key. Please check.", exit_code: 3 }
+#     - { cmd: "openssl rsa -check -noout -in '{{ trino_tls.full_path_fullchain }}' -passin pass:'{{ trino_tls.secret }}'", error_msg: "The fullchain TLS cert does not have a valid RSA key. Please check.", exit_code: 4 }
+#   register: fullchain_inspect
+#   failed_when: fullchain_inspect.rc != 0
 
 
 # - name: Validate the Private key
