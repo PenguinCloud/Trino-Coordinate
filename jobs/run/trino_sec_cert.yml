@@ -6,7 +6,7 @@
     path: "{{ trino_tls.full_path_priv }}"
     type: RSA
 #    passphrase: "{{ trino_tls.secret }}"
-    cipher: auto
+#    cipher: auto
     size: 2048
 
 - name: Generate the required information about the trino private key
