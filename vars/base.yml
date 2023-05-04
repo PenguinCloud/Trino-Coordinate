@@ -35,6 +35,7 @@ trino_tls:
     "DNS:localhost",
     "IP:127.0.0.1"
   ]
+  jks_alias: trino_cert_key_alias
   jks_password: ptgincjks 
 #  secret: ptginc
 

@@ -60,7 +60,7 @@
 - name: Create Java Keystore with the private key and certificate
   community.general.java_keystore:
     dest: "{{ trino_tls.full_path_fullchain_jks }}"
-    name: "{{ trino_tls.keystore_alias }}"
+    name: "{{ trino_tls.jks_alias }}"
     private_key: "{{ lookup('file', trino_tls.full_path_priv) }}"
     certificate: "{{ lookup('file', trino_tls.full_path_crt) }}"
     password: "{{ trino_tls.jks_password }}"
