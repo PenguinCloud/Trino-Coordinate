@@ -18,12 +18,13 @@ trino_tls:
 #  priv_cert_name: trino_self_cert_priv
 #  full_cert: fullchain
 #  dhparam_cert_name: trino_self_cert_dhparam
-  full_path_fullchain: /opt/tls-trino/crt/full/fullchain.pem
+  full_path_fullchain_jks: /opt/tls-trino/crt/full/fullchain.jks
   full_path_priv: /opt/tls-trino/private/trino_self_cert_priv.pem
   full_path_dhparam: /opt/tls-trino/dhparam/trino_self_cert_dhparam.pem
-  full_path_crt: /opt/tls-trino/crt/trino_self_cert.pem
+  full_path_crt: /opt/tls-trino/crt/trino_self_cert.crt
   full_path_csr: /opt/tls-trino/crt/trino_self_cert.csr
   cert_name: ptg_trino_self_cert
+  ca_cert_alias: trino_self_signed_ca_alias
   country: US
   state: Texas
   city: Liberty Hill
@@ -34,6 +35,7 @@ trino_tls:
     "DNS:localhost",
     "IP:127.0.0.1"
   ]
+  jks_password: ptgincjks 
 #  secret: ptginc
 
 trinocli:

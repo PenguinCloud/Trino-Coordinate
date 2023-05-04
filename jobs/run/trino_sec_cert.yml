@@ -5,15 +5,16 @@
   community.crypto.openssl_privatekey:
     path: "{{ trino_tls.full_path_priv }}"
     type: RSA
+    size: 2048
 #    passphrase: "{{ trino_tls.secret }}"
 #    cipher: auto
-    size: 2048
 
-- name: Generate the required information about the trino private key
-  community.crypto.openssl_privatekey_info:
-    path: "{{ trino_tls.full_path_priv }}"
-    select_crypto_backend: cryptography
-    check_consistency: true
+# - name: Generate the required information about the trino private key
+#   community.crypto.openssl_privatekey_info:
+#     path: "{{ trino_tls.full_path_priv }}"
+#     select_crypto_backend: cryptography
+#     check_consistency: true
+
 #    passphrase: "{{ trino_tls.secret }}"
 
 - name: Create trino DH-Param key
@@ -56,22 +57,25 @@
     # acme_accountkey_path: "{{ trino_tls.cert_path_priv }}/{{ trino_tls.priv_cert_name }}.pem"
     # acme_challenge_path:
 
-- name: Create the "fullchain.pem" file to a fully valid TLS cert.
-  ansible.builtin.file:
-    path: "{{ trino_tls.full_path_fullchain }}"
-    state: touch
+- name: Create Java Keystore with the private key and certificate
+  community.general.java_keystore:
+    dest: "{{ trino_tls.full_path_fullchain_jks }}"
+    name: "{{ trino_tls.keystore_alias }}"
+    private_key: "{{ lookup('file', trino_tls.full_path_priv) }}"
+    certificate: "{{ lookup('file', trino_tls.full_path_crt) }}"
+    password: "{{ trino_tls.jks_password }}"
+    mode: 0644
+  register: keystore_result
 
-- name: Add the private key to the full chain file
-  ansible.builtin.shell:
-    cmd: cat "{{ trino_tls.full_path_priv }}" >> "{{ trino_tls.full_path_fullchain }}"
+- name: Add the CA cert to the Java Keystore
+  community.general.java_cert:
+    cert_path: "{{ trino_tls.ca_cert_path }}"
+    keystore_path: "{{ trino_tls.full_path_jks }}"
+    keystore_pass: "{{ trino_tls.keystore_password }}"
+    cert_alias: "{{ trino_tls.ca_cert_alias }}"
+    state: present
+  when: trino_tls.ca_cert_path is defined and keystore_result is changed
 
-- name: Add the x509 cert to the full chain file
-  ansible.builtin.shell:
-    cmd: cat "{{ trino_tls.full_path_crt }}" >> "{{ trino_tls.full_path_fullchain }}"
-
-- name: Add the signing request to the full chain file
-  ansible.builtin.shell:
-    cmd: cat "{{ trino_tls.full_path_csr }}" >> "{{ trino_tls.full_path_fullchain }}"
 
 # - name: Add the DH-Param key to the full chain file
 #   ansible.builtin.shell:
@@ -110,6 +114,23 @@
     msg: "The fullchain TLS cert does not have a valid DH-Param key. Please check"
   when: dhparam_inspect.rc != 0
 
+
+# - name: Create the "fullchain.pem" file to a fully valid TLS cert.
+#   ansible.builtin.file:
+#     path: "{{ trino_tls.full_path_fullchain }}"
+#     state: touch
+
+# - name: Add the private key to the full chain file
+#   ansible.builtin.shell:
+#     cmd: cat "{{ trino_tls.full_path_priv }}" >> "{{ trino_tls.full_path_fullchain }}"
+
+# - name: Add the x509 cert to the full chain file
+#   ansible.builtin.shell:
+#     cmd: cat "{{ trino_tls.full_path_crt }}" >> "{{ trino_tls.full_path_fullchain }}"
+
+# - name: Add the signing request to the full chain file
+#   ansible.builtin.shell:
+#     cmd: cat "{{ trino_tls.full_path_csr }}" >> "{{ trino_tls.full_path_fullchain }}"
 
 # - name: Fully validate the `fullchain.pem` key -- Private, CRT, CSR, RSA, and DH-Param keys
 #   ansible.builtin.shell:
