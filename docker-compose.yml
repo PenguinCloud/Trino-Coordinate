@@ -6,8 +6,8 @@ services:
     build: .
     ports:
       - "8443:8443"
-      - "9080:9080"
-      - "9081:9081"
+#      - "9080:9080". <--temp
+#      - "9081:9081". <--temp
     networks:
       - trino
     healthcheck:
