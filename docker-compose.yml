@@ -2,12 +2,12 @@
 version: "2.4"
 services:
   trino-cord:
-    image: penguintech/trino-cord
+    image: penguincloud/trino-coordinate
     build: .
     ports:
       - "8443:8443"
-      - "9080:9080"
-      - "9081:9081"
+#      - "9080:9080". <--temp
+#      - "9081:9081". <--temp
     networks:
       - trino
     healthcheck:
